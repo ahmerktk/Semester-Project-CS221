@@ -2,168 +2,180 @@
 #include <string>
 using namespace std;
 
+//   QUESTION LINKED LIST
 struct Question {
     string text;
-    string optionA;
-    string optionB;
-    string traitA;
-    string traitB;
+    string options[4];
+    char traits[4];     // I, E, S, N, T, F, J, P
     Question* next;
 };
 
-Question* createQuestion(string t, string a, string b,
-                         string ta, string tb) {
+Question* createQuestion(string t,string o1, char c1,string o2, char c2,string o3, char c3, string o4, char c4){
     Question* q = new Question();
     q->text = t;
-    q->optionA = a;
-    q->optionB = b;
-    q->traitA = ta;
-    q->traitB = tb;
+    q->options[0] = o1; q->traits[0] = c1;
+    q->options[1] = o2; q->traits[1] = c2;
+    q->options[2] = o3; q->traits[2] = c3;
+    q->options[3] = o4; q->traits[3] = c4;
     q->next = NULL;
     return q;
 }
 
-void showHeader() {
+//  BST FOR TRAITS
+struct TraitNode{
+    char trait;
+    int score;
+    TraitNode* left;
+    TraitNode* right;
+};
+
+TraitNode* createTrait(char t){
+    TraitNode* node = new TraitNode();
+    node->trait = t;
+    node->score = 1;
+    node->left = node->right = NULL;
+    return node;
+}
+
+TraitNode* insertTrait(TraitNode* root, char t){
+    if (root == NULL)
+        return createTrait(t);
+
+    if (t == root->trait)
+        root->score++;
+    else if (t < root->trait)
+        root->left = insertTrait(root->left, t);
+    else
+        root->right = insertTrait(root->right, t);
+
+    return root;
+}
+
+int getScore(TraitNode* root, char t){
+    if (root == NULL) return 0;
+    if (root->trait == t) return root->score;
+    if (t < root->trait) return getScore(root->left, t);
+    return getScore(root->right, t);
+}
+
+
+//   CONSOLE UI
+void header() {
     cout << "\n============================================\n";
-    cout << "        PERSONALITY QUIZ ENGINE\n";
+    cout << "        MBTI PERSONALITY QUIZ\n";
     cout << "============================================\n";
-    cout << "Answer honestly. Choose A or B only.\n";
+    cout << "Choose the option that feels most like you.\n";
     cout << "--------------------------------------------\n";
 }
 
-void showFooter() {
+//	 PERSONALITY DESCRIPTION
+void describe(string type) {
     cout << "\n============================================\n";
-    cout << "        QUIZ COMPLETED\n";
+    cout << "        PERSONALITY INSIGHT\n";
     cout << "============================================\n";
-    cout << "Personality evaluation will be shown soon.\n";
+
+    if (type == "INFP")
+        cout << "You are empathetic, idealistic, creative, and deeply value meaning.\n";
+    else if (type == "INTJ")
+        cout << "You are strategic, analytical, independent, and future-oriented.\n";
+    else if (type == "ENTJ")
+        cout << "You are confident, decisive, and a natural leader.\n";
+    else if (type == "ENFP")
+        cout << "You are energetic, imaginative, and driven by values and people.\n";
+    else if (type == "ISTJ")
+        cout << "You are practical, responsible, and highly dependable.\n";
+    else
+        cout << "You have a balanced and adaptable personality.\n";
 }
 
+
 int main() {
-    // Creating questions
+
+    // Create Questions (10 – controlled & strong)
     Question* q1 = createQuestion(
-        "In a group discussion, you usually:",
-        "Listen and observe",
-        "Take charge and speak up",
-        "Introversion", "Leadership");
+        "In a new environment, you prefer to:",
+        "Stay reserved and observe", 'I',
+        "Engage and talk to others", 'E',
+        "Plan everything early", 'J',
+        "Keep things flexible", 'P'
+    );
 
     Question* q2 = createQuestion(
-        "When facing a problem, you prefer:",
-        "Analyzing facts and data",
-        "Thinking creatively for new ideas",
-        "Logic", "Creativity");
+        "You trust information that is:",
+        "Based on facts and reality", 'S',
+        "Based on patterns and ideas", 'N',
+        "Logically sound", 'T',
+        "Emotionally meaningful", 'F'
+    );
 
     Question* q3 = createQuestion(
-        "At social events, you feel more comfortable:",
-        "Staying with a few close people",
-        "Meeting many new people",
-        "Introversion", "Leadership");
+        "When making decisions, you rely more on:",
+        "Objective analysis", 'T',
+        "Personal values", 'F',
+        "Past experiences", 'S',
+        "Future possibilities", 'N'
+    );
 
     Question* q4 = createQuestion(
-        "Your decisions are mostly based on:",
-        "Logical reasoning",
-        "Creative instincts",
-        "Logic", "Creativity");
+        "Your daily life is usually:",
+        "Well-organized", 'J',
+        "Go-with-the-flow", 'P',
+        "Quiet and focused", 'I',
+        "Social and energetic", 'E'
+    );
 
     Question* q5 = createQuestion(
-        "When working in a team, you like to:",
-        "Support quietly",
-        "Lead and organize",
-        "Introversion", "Leadership");
+        "You prefer work that:",
+        "Has clear instructions", 'S',
+        "Allows innovation", 'N',
+        "Involves logic", 'T',
+        "Helps people", 'F'
+    );
 
-    Question* q6 = createQuestion(
-        "You enjoy tasks that require:",
-        "Clear structure",
-        "Imagination and freedom",
-        "Logic", "Creativity");
+    // Linked-list
+    q1->next = q2;
+    q2->next = q3;
+    q3->next = q4;
+    q4->next = q5;
 
-    Question* q7 = createQuestion(
-        "People describe you as:",
-        "Calm and reserved",
-        "Confident and assertive",
-        "Introversion", "Leadership");
+    header();
 
-    Question* q8 = createQuestion(
-        "When learning something new, you prefer:",
-        "Step-by-step guidance",
-        "Exploring on your own",
-        "Logic", "Creativity");
-
-    Question* q9 = createQuestion(
-        "In stressful situations, you usually:",
-        "Think quietly",
-        "Take control",
-        "Introversion", "Leadership");
-
-    Question* q10 = createQuestion(
-        "You trust decisions that are:",
-        "Well-reasoned",
-        "Innovative",
-        "Logic", "Creativity");
-
-    Question* q11 = createQuestion(
-        "In a team, you mostly:",
-        "Work independently",
-        "Guide others",
-        "Introversion", "Leadership");
-
-    Question* q12 = createQuestion(
-        "You prefer tasks that are:",
-        "Predictable",
-        "Open-ended",
-        "Logic", "Creativity");
-
-    Question* q13 = createQuestion(
-        "When sharing ideas, you:",
-        "Think before speaking",
-        "Speak confidently",
-        "Introversion", "Leadership");
-
-    Question* q14 = createQuestion(
-        "You enjoy problems that:",
-        "Have clear solutions",
-        "Allow multiple interpretations",
-        "Logic", "Creativity");
-
-    Question* q15 = createQuestion(
-        "Your natural role in a group is:",
-        "Observer",
-        "Leader",
-        "Introversion", "Leadership");
-
-    // Linking list
-    q1->next = q2;   q2->next = q3;   q3->next = q4;
-    q4->next = q5;   q5->next = q6;   q6->next = q7;
-    q7->next = q8;   q8->next = q9;   q9->next = q10;
-    q10->next = q11; q11->next = q12; q12->next = q13;
-    q13->next = q14; q14->next = q15;
-
-    showHeader();
-
+    TraitNode* root = NULL;
     Question* current = q1;
     int qNo = 1;
     char choice;
 
     while (current != NULL) {
         cout << "\n--------------------------------------------\n";
-        cout << "Question " << qNo << " / 15\n\n";
+        cout << "Question " << qNo++ << "\n\n";
         cout << current->text << "\n\n";
-        cout << "  A) " << current->optionA << "\n";
-        cout << "  B) " << current->optionB << "\n";
-        cout << "\nYour choice (A/B): ";
+
+        for (int i = 0; i < 4; i++)
+            cout << char('A' + i) << ") " << current->options[i] << "\n";
+
+        cout << "\nYour choice (A-D): ";
         cin >> choice;
 
-        if (choice == 'A' || choice == 'a')
-            cout << "? Trait noted: " << current->traitA << "\n";
-        else if (choice == 'B' || choice == 'b')
-            cout << "? Trait noted: " << current->traitB << "\n";
+        int idx = choice - 'A';
+        if (idx >= 0 && idx < 4)
+            root = insertTrait(root, current->traits[idx]);
         else
-            cout << "? Invalid input, moving ahead.\n";
+            cout << "Invalid choice, skipped.\n";
 
         current = current->next;
-        qNo++;
     }
 
-    showFooter();
+//  Build MBTI type
+    string type = "";
+    type += (getScore(root, 'I') >= getScore(root, 'E')) ? 'I' : 'E';
+    type += (getScore(root, 'S') >= getScore(root, 'N')) ? 'S' : 'N';
+    type += (getScore(root, 'T') >= getScore(root, 'F')) ? 'T' : 'F';
+    type += (getScore(root, 'J') >= getScore(root, 'P')) ? 'J' : 'P';
+
+    cout << "\n============================================\n";
+    cout << "Your Personality Type: " << type << endl;
+
+    describe(type);
+
     return 0;
 }
-
