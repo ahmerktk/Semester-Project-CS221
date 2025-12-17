@@ -358,5 +358,5 @@ int main()
     cout << "============================================\n";
     displayLeaderboard(leaderboard);
 
-        return 0;
+    return 0;
 }
