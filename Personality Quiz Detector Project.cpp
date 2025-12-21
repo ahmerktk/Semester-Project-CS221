@@ -2,6 +2,11 @@
 #include <string>
 #include <stack>
 using namespace std;
+#define MAX_TYPES 8
+void printSharedTraits(const string& a, const string& b);
+int maxValue(int a, int b);
+
+
 
 /*=====================================================
                     QUESTION DLL
@@ -58,10 +63,15 @@ TraitNode* insertTrait(TraitNode* root, char t) {
 
 void decrementTrait(TraitNode* root, char t) {
     if (!root) return;
-    if (t == root->trait && root->score > 0) root->score--;
-    else if (t < root->trait) decrementTrait(root->left, t);
-    else decrementTrait(root->right, t);
+
+    if (root->trait == t && root->score > 0)
+        root->score--;
+    else if (t < root->trait)
+        decrementTrait(root->left, t);
+    else
+        decrementTrait(root->right, t);
 }
+
 
 int getScore(TraitNode* root, char t) {
     if (!root) return 0;
@@ -77,7 +87,7 @@ void header() {
     cout << "\n============================================\n";
     cout << "        MBTI PERSONALITY QUIZ SYSTEM\n";
     cout << "============================================\n";
-    cout << "Choose A–D | X = Go Back\n";
+    cout << "Choose A?D | X = Go Back\n";
     cout << "--------------------------------------------\n";
 }
 
@@ -97,6 +107,10 @@ void describe(string type) {
 /*=====================================================
                 AVL LEADERBOARD
 =====================================================*/
+int maxValue(int a, int b) {
+    return (a > b) ? a : b;
+}
+
 struct UserNode {
     string name;
     int score;
@@ -125,8 +139,8 @@ UserNode* rightRotate(UserNode* y) {
     UserNode* t2 = x->right;
     x->right = y;
     y->left = t2;
-    y->height = max(height(y->left), height(y->right)) + 1;
-    x->height = max(height(x->left), height(x->right)) + 1;
+    y->height = maxValue(height(y->left), height(y->right)) + 1;
+    x->height = maxValue(height(x->left), height(x->right)) + 1;
     return x;
 }
 
@@ -135,8 +149,8 @@ UserNode* leftRotate(UserNode* x) {
     UserNode* t2 = y->left;
     y->left = x;
     x->right = t2;
-    x->height = max(height(x->left), height(x->right)) + 1;
-    y->height = max(height(y->left), height(y->right)) + 1;
+    x->height = maxValue(height(x->left), height(x->right)) + 1;
+    y->height = maxValue(height(y->left), height(y->right)) + 1;
     return y;
 }
 
@@ -148,7 +162,7 @@ UserNode* insertUser(UserNode* root, string name, int score) {
     else
         root->right = insertUser(root->right, name, score);
 
-    root->height = max(height(root->left), height(root->right)) + 1;
+    root->height = maxValue(height(root->left), height(root->right)) + 1;
     int b = balance(root);
 
     if (b > 1 && score > root->left->score) return rightRotate(root);
@@ -209,10 +223,148 @@ void showGroups(GroupNode* root) {
     showGroups(root->left);
     cout << "\n" << root->type << " Group: ";
     for (int i = 0; i < root->count; i++)
-        cout << root->names[i] << ",";
+        cout << root->names[i] << "  ";
     cout << endl;
     showGroups(root->right);
 }
+
+struct AdjNode {
+    int index;
+    AdjNode* next;
+};
+
+struct Graph {
+    string types[MAX_TYPES];
+    AdjNode* adj[MAX_TYPES];
+    int size;
+};
+
+int sharedLetters(const string& a, const string& b) {
+    int count = 0;
+    for (int i = 0; i < 4; i++) {
+        if (a[i] == b[i])
+            count++;
+    }
+    return count;
+}
+
+void addEdge(Graph& g, int u, int v) {
+    AdjNode* node1 = new AdjNode();
+    node1->index = v;
+    node1->next = g.adj[u];
+    g.adj[u] = node1;
+
+    AdjNode* node2 = new AdjNode();
+    node2->index = u;
+    node2->next = g.adj[v];
+    g.adj[v] = node2;
+}
+
+Graph buildPersonalityGraph() {
+    Graph g;
+    g.size = MAX_TYPES;
+
+    string temp[MAX_TYPES] = {
+        "INFP", "ENFP", "INFJ", "ENFJ",
+        "INTJ", "ENTJ", "ISFP", "ESFP"
+    };
+
+    for (int i = 0; i < MAX_TYPES; i++) {
+        g.types[i] = temp[i];
+        g.adj[i] = NULL;
+    }
+
+    for (int i = 0; i < MAX_TYPES; i++) {
+        for (int j = i + 1; j < MAX_TYPES; j++) {
+            if (sharedLetters(g.types[i], g.types[j]) >= 2) {
+                addEdge(g, i, j);
+            }
+        }
+    }
+    return g;
+}
+
+void showSimilarPersonalities(Graph& g, const string& userType) {
+    int start = -1;
+
+    for (int i = 0; i < g.size; i++) {
+        if (g.types[i] == userType) {
+            start = i;
+            break;
+        }
+    }
+
+    if (start == -1) {
+        cout << "\nNo personality map available.\n";
+        return;
+    }
+
+    bool visited[MAX_TYPES] = {false};
+    int queue[MAX_TYPES];
+    int front = 0, rear = 0;
+
+    visited[start] = true;
+    queue[rear++] = start;
+
+    cout << "\n==============================================\n";
+    cout << "        YOUR PERSONALITY MAP\n";
+    cout << "==============================================\n";
+    cout << "\nYou are: " << userType << "\n\n";
+
+    cout << "Closest Personality Matches:\n";
+    cout << "----------------------------------------------\n";
+
+    bool firstLayer = true;
+
+    while (front < rear) {
+        int u = queue[front++];
+
+        AdjNode* temp = g.adj[u];
+        while (temp != NULL) {
+            int v = temp->index;
+
+            if (!visited[v]) {
+                visited[v] = true;
+
+                int common = sharedLetters(userType, g.types[v]);
+
+                if (common >= 3) {
+                    cout << "? " << g.types[v];
+                    printSharedTraits(userType, g.types[v]);
+                    cout << endl;
+                }
+
+                queue[rear++] = v;
+            }
+            temp = temp->next;
+        }
+    }
+
+    cout << "\nRelated but Less Similar:\n";
+    cout << "----------------------------------------------\n";
+
+    for (int i = 0; i < g.size; i++) {
+        if (g.types[i] != userType && sharedLetters(userType, g.types[i]) == 2) {
+            cout << "• " << g.types[i] << endl;
+        }
+    }
+
+    cout << "\n==============================================\n";
+}
+
+void printSharedTraits(const string& a, const string& b) {
+    cout << " (Shares: ";
+    bool first = true;
+    for (int i = 0; i < 4; i++) {
+        if (a[i] == b[i]) {
+            if (!first) cout << " ";
+            cout << a[i];
+            first = false;
+        }
+    }
+    cout << ")";
+}
+
 
 /*=====================================================
                 QUIZ ENGINE
@@ -279,13 +431,28 @@ int takeQuiz(string& personality) {
         cout << "Choice: ";
         cin >> choice;
 
-        if ((choice == 'X' || choice == 'x') && current->prev) {
-            decrementTrait(root, history.top());
-            history.pop();
-            current = current->prev;
-            qNo--;
-            continue;
-        }
+
+if (choice >= 'a' && choice <= 'z') {
+    choice = choice - 'a' + 'A';
+}
+
+
+       if ((choice == 'X' || choice == 'x')) {
+    if (!history.empty() && current->prev != NULL) {
+        decrementTrait(root, history.top());
+        history.pop();
+        current = current->prev;
+        continue;
+    } else {
+        cout << "\n?? Cannot undo further.\n";
+        continue;
+    }
+}
+
+	if (choice < 'A' || choice > 'D') {
+    cout << "Invalid choice. Please select A-D.\n";
+    continue;
+}
 
         int idx = choice - 'A';
         if (idx >= 0 && idx < 4) {
@@ -322,22 +489,31 @@ int takeQuiz(string& personality) {
 =====================================================*/
 int main() {
     header();
+    Graph g = buildPersonalityGraph();
+
 
     UserNode* leaderboard = NULL;
     GroupNode* groups = NULL;
+    string lastPersonality = "";
 
     while (true) {
         string name;
-        cout << "\nEnter your name (or EXIT): ";
+        cout << "\nEnter your name (or if you want to EXIT type bye): ";
         cin >> name;
 
-        if (name == "EXIT") break;
+        if (name == "bye") break;
 
         string personality;
         int score = takeQuiz(personality);
 
+        lastPersonality = personality;
+
         leaderboard = insertUser(leaderboard, name, score);
         groups = insertGroup(groups, personality, name);
+        cout << "\nYour Personality Type: " << personality << endl;
+
+		showSimilarPersonalities(g, personality);
+		
 
         cout << "\nQuiz Completed!\n";
     }
@@ -348,6 +524,6 @@ int main() {
     cout << "\n============ PERSONALITY GROUPS =============\n";
     showGroups(groups);
 
+
     return 0;
 }
-
